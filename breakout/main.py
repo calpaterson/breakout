@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 import pygame.locals
 
@@ -5,7 +7,12 @@ display_surface = None
 
 class Paddle(pygame.sprite.Sprite):
     def __init__(self):
-        super()
+        pygame.sprite.Sprite.__init__(self)
+        self.gray = (192, 192, 192)
+        self.image = pygame.Surface((100, 10))
+        self.image.fill(self.gray)
+
+        self.rect = self.image.get_rect()
 
 def main():
     global display_surface
@@ -14,12 +21,19 @@ def main():
 
     pygame.display.set_caption("Breakout")
 
-    going = True
-    while going:
+    paddle = Paddle()
+    allsprites = pygame.sprite.RenderPlain((paddle,))
+
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
                 pygame.quit()
                 going = False
+                sys.exit(1)
+
+        allsprites.update()
+        allsprites.draw(display_surface)
+        pygame.display.flip()
 
 
 if __name__ == "__main__":
