@@ -1,5 +1,6 @@
 import sys
 from logging import getLogger, INFO, basicConfig
+from enum import Enum
 
 import pygame
 import pygame.locals
@@ -29,6 +30,11 @@ class Paddle(pygame.sprite.Sprite):
 
 
 class Puck(pygame.sprite.Sprite):
+    class LastContact(Enum):
+        PADDLE = 1
+        WALL = 2
+        CEILING = 3
+
     def __init__(self, paddle):
         pygame.sprite.Sprite.__init__(self)
         self.white = (254, 254, 254)
@@ -45,7 +51,7 @@ class Puck(pygame.sprite.Sprite):
         self.served = False
         self.x_direction = -1
         self.y_direction = -1
-        self.last_contact = "paddle"
+        self.last_contact = Puck.LastContact.PADDLE
 
     def update(self):
         on_ceiling = self.rect.top <= 0
@@ -55,8 +61,7 @@ class Puck(pygame.sprite.Sprite):
         ])
         on_paddle = all([
             self.rect.colliderect(self.paddle.rect),
-            self.paddle.rect.centery > self.rect.centery,
-            self.last_contact != "paddle",
+            self.last_contact != Puck.LastContact.PADDLE,
         ])
         on_floor = self.rect.top > 480
 
@@ -65,19 +70,19 @@ class Puck(pygame.sprite.Sprite):
             self.served = False
             self.x_direction = -1
             self.y_direction = -1
-            self.last_contact = "paddle"
+            self.last_contact = Puck.LastContact.PADDLE
         elif on_ceiling:
             logger.info("on_ceiling")
             self.x_direction *= -1
-            self.last_contact = "ceiling"
+            self.last_contact = Puck.LastContact.CEILING
         elif on_wall:
             logger.info("on_wall")
             self.y_direction *= -1
-            self.last_contact = "wall"
+            self.last_contact = Puck.LastContact.WALL
         elif on_paddle:
             logger.info("on_paddle")
             self.x_direction *= -1
-            self.last_contact = "paddle"
+            self.last_contact = Puck.LastContact.PADDLE
 
         if not self.served:
             self.rect.midbottom = self.paddle.rect.midtop
