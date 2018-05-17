@@ -7,23 +7,26 @@ import pygame.locals
 
 logger = getLogger("breakout")
 
+WIDTH = 1024
+HEIGHT = 800
+
 display_surface = None
 
 class Paddle(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.gray = (192, 192, 192)
-        self.width = 640/6
-        self.image = pygame.Surface((self.width, 480/50)).convert()
+        self.width = WIDTH/6
+        self.image = pygame.Surface((self.width, HEIGHT/50)).convert()
         self.image.fill(self.gray)
 
         self.rect = self.image.get_rect()
-        self.midtop_x = (480/5) * 4
-        self.rect.midtop = (640/2, self.midtop_x)
+        self.midtop_x = (HEIGHT/5) * 4
+        self.rect.midtop = (WIDTH/2, self.midtop_x)
 
     def update(self):
         mouse_position = pygame.mouse.get_pos()
-        max_y = 640 - (0.5 * self.width)
+        max_y = WIDTH - (0.5 * self.width)
         min_y = 0.5 * self.width
         midtop_y = max(min(mouse_position[0], max_y), min_y)
         self.rect.midtop = (midtop_y, self.midtop_x)
@@ -38,8 +41,8 @@ class Puck(pygame.sprite.Sprite):
     def __init__(self, paddle):
         pygame.sprite.Sprite.__init__(self)
         self.white = (254, 254, 254)
-        self.width = 480/50
-        self.height = 480/50
+        self.width = HEIGHT/50
+        self.height = HEIGHT/50
         self.image = pygame.Surface((self.width, self.height)).convert()
         self.image.fill(self.white)
 
@@ -57,13 +60,13 @@ class Puck(pygame.sprite.Sprite):
         on_ceiling = self.rect.top <= 0
         on_wall = any([
             self.rect.left <= 0,
-            self.rect.right >= 640
+            self.rect.right >= WIDTH
         ])
         on_paddle = all([
             self.rect.colliderect(self.paddle.rect),
             self.last_contact != Puck.LastContact.PADDLE,
         ])
-        on_floor = self.rect.top > 480
+        on_floor = self.rect.top > HEIGHT
 
         if on_floor:
             logger.info("on_floor")
@@ -98,7 +101,7 @@ def main():
 
     pygame.display.set_caption("Breakout")
 
-    display_surface = pygame.display.set_mode((640, 480))
+    display_surface = pygame.display.set_mode((WIDTH, HEIGHT))
 
     background = pygame.Surface(display_surface.get_size()).convert()
     background.fill((0, 0, 0))
