@@ -1,6 +1,7 @@
 import sys
 from logging import getLogger, INFO, basicConfig
 from enum import Enum
+import random
 
 import pygame
 import pygame.locals
@@ -37,8 +38,9 @@ class Puck(pygame.sprite.Sprite):
         PADDLE = 1
         WALL = 2
         CEILING = 3
+        BLOCK = 4
 
-    def __init__(self, paddle):
+    def __init__(self, paddle, blocks):
         pygame.sprite.Sprite.__init__(self)
         self.white = (254, 254, 254)
         self.width = HEIGHT/50
@@ -50,6 +52,7 @@ class Puck(pygame.sprite.Sprite):
         self.rect.midbottom = paddle.rect.midtop
 
         self.paddle = paddle
+        self.blocks = blocks
 
         self.served = False
         self.x_direction = -1
@@ -67,6 +70,8 @@ class Puck(pygame.sprite.Sprite):
             self.last_contact != Puck.LastContact.PADDLE,
         ])
         on_floor = self.rect.top > HEIGHT
+        block_sprites = self.blocks.sprites()
+        on_block = self.rect.collidelist(block_sprites)
 
         if on_floor:
             logger.info("on_floor")
@@ -86,11 +91,64 @@ class Puck(pygame.sprite.Sprite):
             logger.info("on_paddle")
             self.x_direction *= -1
             self.last_contact = Puck.LastContact.PADDLE
+        elif on_block != -1:
+            logger.info(on_block)
+            block_sprites[on_block].kill()
+            self.last_contact = Puck.LastContact.BLOCK
 
         if not self.served:
             self.rect.midbottom = self.paddle.rect.midtop
         else:
             self.rect.move_ip(2 * self.y_direction, 3 * self.x_direction)
+
+
+class Block(pygame.sprite.Sprite):
+    class Level(Enum):
+        EASIEST = 0
+        EASY = 1
+        HARD = 3
+        HARDEST = 4
+
+
+    level_colours = {
+        Level.EASIEST: (230, 0, 230),
+        Level.EASY: (230, 0, 0),
+        Level.HARD: (0, 230, 0),
+        Level.HARDEST: (0, 230, 230),
+    }
+
+    def __init__(self, level=Level.EASIEST):
+        pygame.sprite.Sprite.__init__(self)
+
+        self.level = level
+        self.colour = Block.level_colours[level]
+        self.width = WIDTH/15
+        self.height = HEIGHT/25
+        self.image = pygame.Surface((self.width, self.height)).convert()
+        self.image.fill(self.colour)
+
+        self.rect = self.image.get_rect()
+
+
+def generate_blocks(n=13):
+    rng = random.Random(0)
+    blocks = pygame.sprite.Group(
+        Block(level=rng.choice(list(Block.Level))) for _ in range(n))
+
+    block_height = blocks.sprites()[0].rect.height
+    block_width = blocks.sprites()[0].rect.width
+
+    topleft = (block_width, block_height)
+    for index, block in enumerate(blocks, start=1):
+        block.rect.topleft = topleft
+        logger.info(topleft)
+
+        if index % 13 == 0:
+            topleft = (block_width, ((index // 13) + 1) * block_height)
+        else:
+            topleft = block.rect.topright
+    return blocks
+
 
 
 def main():
@@ -107,8 +165,13 @@ def main():
     background.fill((0, 0, 0))
 
     paddle = Paddle()
-    puck = Puck(paddle)
-    allsprites = pygame.sprite.RenderUpdates((paddle, puck))
+    blocks = generate_blocks(n=13*5)
+    puck = Puck(paddle, blocks)
+    allsprites = pygame.sprite.RenderUpdates()
+    allsprites.add(paddle)
+    allsprites.add(puck)
+    for block in blocks:
+        allsprites.add(block)
 
     clock = pygame.time.Clock()
 
